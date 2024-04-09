@@ -65,7 +65,7 @@ async def log_all_requests(request: Request, call_next):
     logging.info(req)
     solver_logging.log_to_json('requests.log', req, __i)
     response = await call_next(request)
-    solver_logging.log_to_json('response.log', response, __i)
+    solver_logging.log_to_json('response.log', response.body, __i)
     return response
 
 
