@@ -107,7 +107,7 @@ async def solve(problem: dict, request: Request):  # type: ignore
         return trivial_solution
     
     solution = {
-        'solutions': [ 
+        'solutions': [
             {
                 'id': 0,
                 'prices': {token: '1'},
