@@ -18,7 +18,7 @@ def set_stdout_logging(log_level: int = logging.INFO):
     root.addHandler(file_handler)
 
 
-def log_request_to_json(s):
-    with open('requests.log', 'a') as file:
-        file.write(str(s))
+def log_to_json(filename, s, id):
+    with open(filename, 'a') as file:
+        file.write(f"{id}: {str(s)}")
         file.write('\n')

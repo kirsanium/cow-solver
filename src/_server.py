@@ -55,14 +55,17 @@ async def get_body(request: Request) -> bytes:
     await set_body(request, body)
     return body
 
-
+__i = 0
 @app.middleware("http")
 async def log_all_requests(request: Request, call_next):
     await set_body(request, await request.body())
     req = await get_body(request)
+    global __i
+    __i += 1
     logging.info(req)
-    solver_logging.log_request_to_json(req)
+    solver_logging.log_to_json('requests.log', req, __i)
     response = await call_next(request)
+    solver_logging.log_to_json('response.log', response, __i)
     return response
 
 
