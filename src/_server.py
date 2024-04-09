@@ -8,7 +8,8 @@ import decimal
 import logging
 import uvicorn
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response, APIRouter
+from fastapi.routing import APIRoute
 from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseSettings
 from src.util import solver_logging
@@ -38,35 +39,49 @@ server_settings = ServerSettings()
 
 # ++++ Endpoints: ++++
 
+__i = 0
+class LoggedRoute(APIRoute):
+    def get_route_handler(self):
+        original_route_handler = super().get_route_handler()
+
+        async def custom_route_handler(request: Request) -> Response:
+            global __i
+            __i += 1
+            solver_logging.log_to_json('requests.log', request, __i)
+            logging.info(request)
+            response: Response = await original_route_handler(request)
+            solver_logging.log_to_json('response.log', response.body, __i)
+            return response
+
+        return custom_route_handler
 
 solver_logging.set_stdout_logging()
 app = FastAPI(title="Batch auction solver")
+router = APIRouter(route_class=LoggedRoute)
 app.add_middleware(GZipMiddleware)
 
 
-async def set_body(request: Request, body: bytes):
-    async def receive():
-        return {"type": "http.request", "body": body}
-    request._receive = receive
+# async def set_body(request: Request, body: bytes):
+#     async def receive():
+#         return {"type": "http.request", "body": body}
+#     request._receive = receive
 
 
-async def get_body(request: Request) -> bytes:
-    body = await request.body()
-    await set_body(request, body)
-    return body
+# async def get_body(request: Request) -> bytes:
+#     body = await request.body()
+#     await set_body(request, body)
+#     return body
 
-__i = 0
-@app.middleware("http")
-async def log_all_requests(request: Request, call_next):
-    await set_body(request, await request.body())
-    req = await get_body(request)
-    global __i
-    __i += 1
-    logging.info(req)
-    solver_logging.log_to_json('requests.log', req, __i)
-    response = await call_next(request)
-    solver_logging.log_to_json('response.log', response.body, __i)
-    return response
+
+# @app.middleware("http")
+# async def log_all_requests(request: Request, call_next):
+#     await set_body(request, await request.body())
+#     req = await get_body(request)
+#     logging.info(req)
+#     solver_logging.log_to_json('requests.log', req, __i)
+#     response = await call_next(request)
+#     solver_logging.log_to_json('response.log', response.body, __i)
+#     return response
 
 
 @app.get("/health", status_code=200)
