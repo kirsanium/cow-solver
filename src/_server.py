@@ -59,6 +59,7 @@ solver_logging.set_stdout_logging()
 app = FastAPI(title="Batch auction solver")
 router = APIRouter(route_class=LoggedRoute)
 app.add_middleware(GZipMiddleware)
+app.include_router(router)
 
 
 # async def set_body(request: Request, body: bytes):
