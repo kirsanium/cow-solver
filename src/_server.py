@@ -53,8 +53,10 @@ class LoggedRoute(APIRoute):
         original_route_handler = super().get_route_handler()
 
         async def custom_route_handler(request: Request) -> Response:
-            solver_logging.log_to_json('requests.log', request, self.log_index)
-            logging.info(request)
+            await set_body(request, await request.body())
+            req = await get_body(request)
+            solver_logging.log_to_json('requests.log', req, self.log_index)
+            logging.info(req)
             response: Response = await original_route_handler(request)
             solver_logging.log_to_json('response.log', response.body, self.log_index)
             self.log_index += 1
@@ -68,16 +70,16 @@ router = APIRouter(route_class=LoggedRoute)
 app.add_middleware(GZipMiddleware)
 
 
-# async def set_body(request: Request, body: bytes):
-#     async def receive():
-#         return {"type": "http.request", "body": body}
-#     request._receive = receive
+async def set_body(request: Request, body: bytes):
+    async def receive():
+        return {"type": "http.request", "body": body}
+    request._receive = receive
 
 
-# async def get_body(request: Request) -> bytes:
-#     body = await request.body()
-#     await set_body(request, body)
-#     return body
+async def get_body(request: Request) -> bytes:
+    body = await request.body()
+    await set_body(request, body)
+    return body
 
 
 # @app.middleware("http")
