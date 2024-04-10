@@ -85,20 +85,20 @@ app.include_router(router)
 #     return response
 
 
-@app.get("/health", status_code=200)
+@router.get("/health", status_code=200)
 def health() -> bool:
     """Convenience endpoint to check if server is alive."""
     return True
 
 
-@app.post("/notify", response_model=bool)
+@router.post("/notify", response_model=bool)
 async def notify(request: Request) -> bool:
     """Print response from notify endpoint."""
     print(f"Notify request {await request.json()}")
     return True
 
 
-@app.post("/solve")
+@router.post("/solve")
 async def solve(problem: dict, request: Request):  # type: ignore
     """API POST solve endpoint handler"""
     logging.debug(f"Received solve request {await request.json()}")
@@ -150,9 +150,6 @@ async def solve(problem: dict, request: Request):  # type: ignore
     }
     print("\n\n*************\n\nReturning solution: " + str(solution))
     return solution
-
-
-# ++++ Server setup: ++++
 
 
 if __name__ == "__main__":
