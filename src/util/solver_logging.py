@@ -1,5 +1,6 @@
 import logging
 import sys
+import json
 
 
 def set_stdout_logging(log_level: int = logging.INFO):
@@ -20,5 +21,5 @@ def set_stdout_logging(log_level: int = logging.INFO):
 
 def log_to_json(filename, s, id):
     with open(filename, 'a') as file:
-        file.write(f"{str(id)}: {str(s)}")
+        file.write(f"{str(id)}: {str(json.loads(s))}")
         file.write('\n')
