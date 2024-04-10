@@ -6,6 +6,10 @@ from __future__ import annotations
 import argparse
 import decimal
 import logging
+from typing import Any, Callable, Dict, List, Set, Type
+from fastapi.datastructures import DefaultPlaceholder
+from fastapi.params import Depends
+from starlette.routing import BaseRoute
 import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Response, APIRouter
@@ -39,18 +43,21 @@ server_settings = ServerSettings()
 
 # ++++ Endpoints: ++++
 
-__i = 0
 class LoggedRoute(APIRoute):
+
+    def __init__(self, path: str, endpoint: Callable[..., Any], *, response_model: Type[Any] | None = None, status_code: int = 200, tags: List[str] | None = None, dependencies: argparse.Sequence[Depends] | None = None, summary: str | None = None, description: str | None = None, response_description: str = "Successful Response", responses: Dict[int | str, Dict[str, Any]] | None = None, deprecated: bool | None = None, name: str | None = None, methods: Set[str] | List[str] | None = None, operation_id: str | None = None, response_model_include: Set[int | str] | Dict[int | str, Any] | None = None, response_model_exclude: Set[int | str] | Dict[int | str, Any] | None = None, response_model_by_alias: bool = True, response_model_exclude_unset: bool = False, response_model_exclude_defaults: bool = False, response_model_exclude_none: bool = False, include_in_schema: bool = True, response_class: Response | DefaultPlaceholder = ..., dependency_overrides_provider: argparse.Any | None = None, callbacks: List[BaseRoute] | None = None) -> None:
+        super().__init__(path, endpoint, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, name=name, methods=methods, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, dependency_overrides_provider=dependency_overrides_provider, callbacks=callbacks)
+        self.log_index = 0
+
     def get_route_handler(self):
         original_route_handler = super().get_route_handler()
 
         async def custom_route_handler(request: Request) -> Response:
-            global __i
-            __i += 1
-            solver_logging.log_to_json('requests.log', request, __i)
+            solver_logging.log_to_json('requests.log', request, self.log_index)
             logging.info(request)
             response: Response = await original_route_handler(request)
-            solver_logging.log_to_json('response.log', response.body, __i)
+            solver_logging.log_to_json('response.log', response.body, self.log_index)
+            self.log_index += 1
             return response
 
         return custom_route_handler
