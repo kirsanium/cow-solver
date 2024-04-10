@@ -41,7 +41,18 @@ class ServerSettings(BaseSettings):
 
 server_settings = ServerSettings()
 
-# ++++ Endpoints: ++++
+
+async def set_body(request: Request, body: bytes):
+    async def receive():
+        return {"type": "http.request", "body": body}
+    request._receive = receive
+
+
+async def get_body(request: Request) -> bytes:
+    body = await request.body()
+    await set_body(request, body)
+    return body
+
 
 class LoggedRoute(APIRoute):
 
@@ -64,35 +75,14 @@ class LoggedRoute(APIRoute):
 
         return custom_route_handler
 
+
 solver_logging.set_stdout_logging()
 app = FastAPI(title="Batch auction solver")
 router = APIRouter(route_class=LoggedRoute)
 app.add_middleware(GZipMiddleware)
 
 
-async def set_body(request: Request, body: bytes):
-    async def receive():
-        return {"type": "http.request", "body": body}
-    request._receive = receive
-
-
-async def get_body(request: Request) -> bytes:
-    body = await request.body()
-    await set_body(request, body)
-    return body
-
-
-# @app.middleware("http")
-# async def log_all_requests(request: Request, call_next):
-#     await set_body(request, await request.body())
-#     req = await get_body(request)
-#     logging.info(req)
-#     solver_logging.log_to_json('requests.log', req, __i)
-#     response = await call_next(request)
-#     solver_logging.log_to_json('response.log', response.body, __i)
-#     return response
-
-
+# ++++ Endpoints: ++++
 @router.get("/health", status_code=200)
 def health() -> bool:
     """Convenience endpoint to check if server is alive."""
