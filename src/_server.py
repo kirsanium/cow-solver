@@ -114,7 +114,7 @@ async def solve(problem: dict, request: Request):  # type: ignore
         print("\n\n*************\n\nReturning trivial solution: " + str(trivial_solution))
         return trivial_solution
     
-    gas_cost = 150000 * gas_price
+    gas_cost = 0 * gas_price
     token = o['sellToken']
     sell_amount = int(o['sellAmount'])
     buy_amount = int(o['buyAmount'])
