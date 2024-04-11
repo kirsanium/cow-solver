@@ -111,7 +111,7 @@ async def solve(problem: dict, request: Request):  # type: ignore
             found_solution = True
             break
     if not found_solution:
-        print("\n\n*************\n\nReturning solution: " + str(trivial_solution))
+        print("\n\n*************\n\nReturning trivial solution: " + str(trivial_solution))
         return trivial_solution
     
     gas_cost = 150000 * gas_price
