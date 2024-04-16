@@ -36,7 +36,7 @@ class ServerSettings(BaseSettings):
     """Basic Server Settings"""
 
     host: str = "0.0.0.0"
-    port: int = 8000
+    port: int = 6112
 
 
 server_settings = ServerSettings()
@@ -111,7 +111,7 @@ async def solve(problem: dict, request: Request):  # type: ignore
             found_solution = True
             break
     if not found_solution:
-        print("\n\n*************\n\nReturning trivial solution: " + str(trivial_solution))
+        logging.debug("\n\n*************\n\nReturning trivial solution: \n" + str(trivial_solution))
         return trivial_solution
     
     gas_cost = 0 * gas_price
@@ -146,7 +146,7 @@ async def solve(problem: dict, request: Request):  # type: ignore
             }
         ]
     }
-    print("\n\n*************\n\nReturning solution: " + str(solution))
+    logging.debug("\n\n*************\n\nReturning solution: \n" + str(solution))
     return solution
 
 

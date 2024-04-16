@@ -1,6 +1,6 @@
 import logging
+import logging.handlers
 import sys
-import json
 
 
 def set_stdout_logging(log_level: int = logging.INFO):
@@ -13,12 +13,16 @@ def set_stdout_logging(log_level: int = logging.INFO):
     handler.setFormatter(formatter)
     root.addHandler(handler)
 
-    file_handler = logging.FileHandler('log.txt')
-    file_handler.setLevel(log_level)
-    file_handler.setFormatter(formatter)
-    root.addHandler(file_handler)
+    log_handler = logging.handlers.RotatingFileHandler(
+        'log.txt', maxBytes=1024 * 1024 * 5, backupCount=25,
+        encoding='utf-8'
+    )
+    log_handler.setLevel(log_level)
+    log_handler.setFormatter(formatter)
+    root.addHandler(log_handler)
 
 
 def log_to_json(filename, s, id):
-    with open(filename, 'a') as file:
-        file.write(f"{str(id)}: {str(s)}\n")
+    ...
+    # with open(filename, 'a') as file:
+    #     file.write(f"{str(id)}: {str(s)}\n")
