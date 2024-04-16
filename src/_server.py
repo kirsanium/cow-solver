@@ -67,7 +67,7 @@ class LoggedRoute(APIRoute):
             await set_body(request, await request.body())
             req = await get_body(request)
             solver_logging.log_to_json('requests.log', req, self.log_index)
-            logging.info(req)
+            # logging.info(req)
             response: Response = await original_route_handler(request)
             solver_logging.log_to_json('response.log', response.body, self.log_index)
             self.log_index += 1
@@ -76,7 +76,7 @@ class LoggedRoute(APIRoute):
         return custom_route_handler
 
 
-solver_logging.set_stdout_logging()
+solver_logging.set_stdout_logging(logging.DEBUG)
 app = FastAPI(title="Batch auction solver")
 router = APIRouter(route_class=LoggedRoute)
 app.add_middleware(GZipMiddleware)
@@ -123,6 +123,7 @@ async def solve(problem: dict, request: Request):  # type: ignore
     fee_in_sell = int(gas_cost * 10**18 / native_price)
     
     if sell_amount - fee_in_sell <= buy_amount:
+        logging.debug("\n\n*************\n\nReturning trivial solution: \n" + str(trivial_solution))
         return trivial_solution
     
     solution = {
