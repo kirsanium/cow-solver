@@ -6,7 +6,8 @@ from __future__ import annotations
 import argparse
 import decimal
 import logging
-from typing import Any, Callable, Dict, List, Set, Type
+from typing import Any, Callable, Dict, List, Set
+from enum import Enum
 from fastapi.datastructures import DefaultPlaceholder
 from fastapi.params import Depends
 from starlette.routing import BaseRoute
@@ -15,9 +16,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Response, APIRouter
 from fastapi.routing import APIRoute
 from fastapi.middleware.gzip import GZipMiddleware
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 from src.util import solver_logging
-from src.models.solver_args import SolverArgs
 
 # Set decimal precision.
 decimal.getcontext().prec = 100
@@ -55,10 +55,10 @@ async def get_body(request: Request) -> bytes:
 
 
 class LoggedRoute(APIRoute):
+    
+    def __init__(self, path: str, endpoint: Callable[..., Any], *, response_model: Any = ..., status_code: int | None = None, tags: List[str | Enum] | None = None, dependencies: argparse.Sequence[Depends] | None = None, summary: str | None = None, description: str | None = None, response_description: str = "Successful Response", responses: Dict[int | str, Dict[str, Any]] | None = None, deprecated: bool | None = None, name: str | None = None, methods: Set[str] | List[str] | None = None, operation_id: str | None = None, response_model_include: Set[int] | Set[str] | Dict[int, Any] | Dict[str, Any] | None = None, response_model_exclude: Set[int] | Set[str] | Dict[int, Any] | Dict[str, Any] | None = None, response_model_by_alias: bool = True, response_model_exclude_unset: bool = False, response_model_exclude_defaults: bool = False, response_model_exclude_none: bool = False, include_in_schema: bool = True, response_class: Response | DefaultPlaceholder = ..., dependency_overrides_provider: Any | None = None, callbacks: List[BaseRoute] | None = None, openapi_extra: Dict[str, Any] | None = None, generate_unique_id_function: Callable[[APIRoute], str] | DefaultPlaceholder = ...) -> None:
+        super().__init__(path, endpoint, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, name=name, methods=methods, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, dependency_overrides_provider=dependency_overrides_provider, callbacks=callbacks, openapi_extra=openapi_extra, generate_unique_id_function=generate_unique_id_function)
 
-    def __init__(self, path: str, endpoint: Callable[..., Any], *, response_model: Type[Any] | None = None, status_code: int = 200, tags: List[str] | None = None, dependencies: argparse.Sequence[Depends] | None = None, summary: str | None = None, description: str | None = None, response_description: str = "Successful Response", responses: Dict[int | str, Dict[str, Any]] | None = None, deprecated: bool | None = None, name: str | None = None, methods: Set[str] | List[str] | None = None, operation_id: str | None = None, response_model_include: Set[int | str] | Dict[int | str, Any] | None = None, response_model_exclude: Set[int | str] | Dict[int | str, Any] | None = None, response_model_by_alias: bool = True, response_model_exclude_unset: bool = False, response_model_exclude_defaults: bool = False, response_model_exclude_none: bool = False, include_in_schema: bool = True, response_class: Response | DefaultPlaceholder = ..., dependency_overrides_provider: argparse.Any | None = None, callbacks: List[BaseRoute] | None = None) -> None:
-        super().__init__(path, endpoint, response_model=response_model, status_code=status_code, tags=tags, dependencies=dependencies, summary=summary, description=description, response_description=response_description, responses=responses, deprecated=deprecated, name=name, methods=methods, operation_id=operation_id, response_model_include=response_model_include, response_model_exclude=response_model_exclude, response_model_by_alias=response_model_by_alias, response_model_exclude_unset=response_model_exclude_unset, response_model_exclude_defaults=response_model_exclude_defaults, response_model_exclude_none=response_model_exclude_none, include_in_schema=include_in_schema, response_class=response_class, dependency_overrides_provider=dependency_overrides_provider, callbacks=callbacks)
-        self.log_index = 0
 
     def get_route_handler(self):
         original_route_handler = super().get_route_handler()

@@ -7,3 +7,5 @@ pydantic
 pytest
 makefun
 web3-ethereum-defi[data]
+pydantic-settings
+pyyaml==5.3.1

@@ -14,7 +14,7 @@ def set_stdout_logging(log_level: int = logging.INFO):
     root.addHandler(handler)
 
     log_handler = logging.handlers.RotatingFileHandler(
-        'log.txt', maxBytes=1024 * 1024 * 5, backupCount=25,
+        'logs/log.txt', maxBytes=1024 * 1024 * 5, backupCount=25,
         encoding='utf-8'
     )
     log_handler.setLevel(log_level)
