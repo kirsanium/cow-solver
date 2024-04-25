@@ -9,7 +9,7 @@ from src.models.types import NumericType
 from src.util.constants import Constants
 
 
-class Token:
+class Address:
     """Enumeration over available tokens."""
 
     def __init__(self, value: str):
@@ -39,15 +39,19 @@ class Token:
 
     def __eq__(self, other: object) -> bool:
         """Equality operator."""
-        if isinstance(other, Token):
+        if isinstance(other, Address):
             return self.value == other.value
         return False
 
     def __lt__(self, other: object) -> bool:
         """Less-than operator."""
-        if isinstance(other, Token):
+        if isinstance(other, Address):
             return self.value < other.value
         return NotImplemented
+
+
+class Token(Address):
+    ...
 
 
 class TokenInfo:
@@ -56,30 +60,19 @@ class TokenInfo:
     def __init__(
         self,
         token: Token,
-        decimals: int,
-        alias: Optional[str] = None,
-        external_price: Optional[Decimal] = None,
-        estimated_price: Optional[Decimal] = None,
-        internal_buffer: Optional[Decimal] = None,
-        normalize_priority: Optional[int] = 0,
+        decimals: Optional[int] = None,
+        symbol: Optional[str] = None,
+        reference_price: Optional[Decimal] = None,
+        available_balance: Optional[Decimal] = None,
+        trusted: bool = False
     ):
         """Constructor."""
         self.token = token
-        self.alias = alias
         self.decimals = decimals
-        self.external_price = external_price
-        self.estimated_price = estimated_price
-        self.internal_buffer = internal_buffer
-        self._normalize_priority = normalize_priority or 0
-
-    @property
-    def normalize_priority(self) -> int:
-        """
-        Return the token priority for normalization purposes.
-
-        Higher value means higher priority.
-        """
-        return self._normalize_priority
+        self.symbol = symbol
+        self.reference_price = reference_price
+        self.available_balance = available_balance
+        self.trusted = trusted
 
     def as_dict(self) -> dict:
         """Convert to dict."""
@@ -105,22 +98,6 @@ class TokenInfo:
             _str += f"\n-- {attr} : {value}"
 
         return _str
-
-
-def select_token_with_highest_normalize_priority(
-    tokens: dict[Token, TokenInfo]
-) -> Token:
-    """
-    Select token with highest normalize priority from the list of tokens.
-
-    If the highest normalize_priority is shared by multiple tokens, the
-    ref_token is the first lexicographically.
-    """
-    max_priority = max(t.normalize_priority for t in tokens.values())
-    highest_priority_tokens = [
-        t for t, info in tokens.items() if info.normalize_priority == max_priority
-    ]
-    return highest_priority_tokens[0]
 
 
 TokenDict = dict[Token, TokenInfo]

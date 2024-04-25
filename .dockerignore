@@ -1,6 +1,5 @@
 .github
 tests
-data
 .env.sample
 .gitignore
 .pylintrc

@@ -1,0 +1,199 @@
+{
+    "id": "10296723",
+    "tokens": {
+        "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2": {
+            "decimals": null,
+            "symbol": null,
+            "referencePrice": "1000000000000000000",
+            "availableBalance": "0",
+            "trusted": false
+        },
+        "0xdef1ca1fb7fbcdc777520aa7f396b4e015f497ab": {
+            "decimals": null,
+            "symbol": null,
+            "referencePrice": "69453371625962",
+            "availableBalance": "0",
+            "trusted": false
+        },
+        "0xdac17f958d2ee523a2206206994597c13d831ec7": {
+            "decimals": null,
+            "symbol": null,
+            "referencePrice": "284894012362029794588622848",
+            "availableBalance": "0",
+            "trusted": false
+        },
+        "0x0001a500a6b18995b03f44bb040a5ffc28e45cb0": {
+            "decimals": null,
+            "symbol": null,
+            "referencePrice": "1028429677216658",
+            "availableBalance": "0",
+            "trusted": false
+        },
+        "0x6810e776880c02933d47db1b9fc05908e5386b96": {
+            "decimals": null,
+            "symbol": null,
+            "referencePrice": null,
+            "availableBalance": "0",
+            "trusted": false
+        },
+        "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2": {
+            "decimals": null,
+            "symbol": null,
+            "referencePrice": null,
+            "availableBalance": "0",
+            "trusted": false
+        },
+        "0xc00e94cb662c3520282e6f5717214004a7f26888": {
+            "decimals": null,
+            "symbol": null,
+            "referencePrice": null,
+            "availableBalance": "0",
+            "trusted": false
+        },
+        "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": {
+            "decimals": null,
+            "symbol": null,
+            "referencePrice": "284839428266653666980659200",
+            "availableBalance": "0",
+            "trusted": false
+        },
+        "0x6b175474e89094c44da98b954eedeac495271d0f": {
+            "decimals": null,
+            "symbol": null,
+            "referencePrice": "285067728646872",
+            "availableBalance": "0",
+            "trusted": false
+        },
+        "0xfe0c30065b384f05761f15d0cc899d4f9f9cc0eb": {
+            "decimals": null,
+            "symbol": null,
+            "referencePrice": "1668474448497875",
+            "availableBalance": "0",
+            "trusted": false
+        }
+    },
+    "orders": [
+        {
+            "uid": "0x9a487a9171859f2ac1dba7964d8536ce45f7c62cf470971c10e792d7b3885d7bffab14b181409170378471b13ff2bff5be012c64663b854c",
+            "sellToken": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "buyToken": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            "sellAmount": "1000000000000000000000",
+            "buyAmount": "1000500000",
+            "kind": "sell",
+            "partiallyFillable": false,
+            "class": "limit"
+        },
+        {
+            "uid": "0x62905c8b35bb9a7d068c3f41a12fc04f29e325f74b81c488c79e87b602dc506fffab14b181409170378471b13ff2bff5be012c64663b853f",
+            "sellToken": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "buyToken": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            "sellAmount": "2000000000000000000000",
+            "buyAmount": "2001000000",
+            "kind": "sell",
+            "partiallyFillable": false,
+            "class": "limit"
+        },
+        {
+            "uid": "0x73d6eb5a018a66b234f410d2b0fd21ee42d5ac19b8c4c7e5f77ccb6fdb43eef6ffab14b181409170378471b13ff2bff5be012c64663b84df",
+            "sellToken": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "buyToken": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            "sellAmount": "3000000000000000000000",
+            "buyAmount": "3001500000",
+            "kind": "sell",
+            "partiallyFillable": false,
+            "class": "limit"
+        },
+        {
+            "uid": "0x4f8d0670415228c111f5e3a4cef6ddca1e6f9bc6d091971d32fe696732609063ffab14b181409170378471b13ff2bff5be012c64663b83c3",
+            "sellToken": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "buyToken": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            "sellAmount": "6000000000000000000000",
+            "buyAmount": "6003000000",
+            "kind": "sell",
+            "partiallyFillable": false,
+            "class": "limit"
+        },
+        {
+            "uid": "0xe4107f1b85dd0d2f0627f65631dd8b660fcf43e2eba2f114142d43d3a9d75186ffab14b181409170378471b13ff2bff5be012c64663b83a7",
+            "sellToken": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "buyToken": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            "sellAmount": "7000000000000000000000",
+            "buyAmount": "7003500000",
+            "kind": "sell",
+            "partiallyFillable": false,
+            "class": "limit"
+        },
+        {
+            "uid": "0x195b87cbe9a50f91b846fa42e2abfd6c7cc95ae306b1e5d41a88750f0e686881ffab14b181409170378471b13ff2bff5be012c64663b84c8",
+            "sellToken": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "buyToken": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            "sellAmount": "4000000000000000000000",
+            "buyAmount": "4002000000",
+            "kind": "sell",
+            "partiallyFillable": false,
+            "class": "limit"
+        },
+        {
+            "uid": "0xcccf9329152bb42b96bfd7452a8c8c750345f77cd9dc854dd519d4f7bb165c88ffab14b181409170378471b13ff2bff5be012c64663b8206",
+            "sellToken": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "buyToken": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+            "sellAmount": "1000000000000000000000",
+            "buyAmount": "1000500000",
+            "kind": "sell",
+            "partiallyFillable": false,
+            "class": "limit"
+        }
+    ],
+    "liquidity": [
+        {
+            "kind": "constantProduct",
+            "id": "0",
+            "address": "0x445a149c3f0b9906accfe369b566671b0f229b83",
+            "router": "0x7a250d5630b4cf539739df2c5dacb4c659f2488d",
+            "gasEstimate": "90171",
+            "tokens": {
+                "0x6810e776880c02933d47db1b9fc05908e5386b96": {
+                    "balance": "3049"
+                },
+                "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2": {
+                    "balance": "328"
+                }
+            },
+            "fee": "0.003"
+        },
+        {
+            "kind": "constantProduct",
+            "id": "1",
+            "address": "0x942be9e8a12cfaaf997cd266487eaf8553b119d2",
+            "router": "0x7a250d5630b4cf539739df2c5dacb4c659f2488d",
+            "gasEstimate": "90171",
+            "tokens": {
+                "0xc00e94cb662c3520282e6f5717214004a7f26888": {
+                    "balance": "22916292926934202"
+                },
+                "0xdac17f958d2ee523a2206206994597c13d831ec7": {
+                    "balance": "1062970"
+                }
+            },
+            "fee": "0.003"
+        },
+        {
+            "kind": "constantProduct",
+            "id": "2",
+            "address": "0xa14dfbaa23ee8e8b69878381f8fd1d0bc502c043",
+            "router": "0x7a250d5630b4cf539739df2c5dacb4c659f2488d",
+            "gasEstimate": "90171",
+            "tokens": {
+                "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2": {
+                    "balance": "163639401033608334"
+                },
+                "0xdac17f958d2ee523a2206206994597c13d831ec7": {
+                    "balance": "584768987"
+                }
+            },
+            "fee": "0.003"
+        }
+    ],
+    "effectiveGasPrice": "51286438476",
+    "deadline": "2024-04-09T15:44:10.101647087Z"
+}

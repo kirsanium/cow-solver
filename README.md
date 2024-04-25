@@ -41,7 +41,7 @@ docker build -t test-solver-image .
 curl -X POST "http://127.0.0.1:8000/solve" \
   -H  "accept: application/json" \
   -H  "Content-Type: application/json" \
-  --data "@data/small_example.json"
+  --data "@data/example.json"
 ```
 
 # Connect to the orderbook:

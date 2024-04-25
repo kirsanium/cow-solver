@@ -6,59 +6,54 @@ from __future__ import annotations
 import decimal
 import logging
 from decimal import Decimal
-from typing import Any, Optional
-
-from src.models.order import Order, OrdersSerializedType
+from typing import Any
+from src.models.order import Order
 from src.models.token import (
     Token,
     TokenInfo,
-    select_token_with_highest_normalize_priority,
     TokenDict,
     TokenSerializedType,
 )
 from src.models.types import NumericType
-from src.models.uniswap import Uniswap, UniswapsSerializedType
-from src.util.enums import Chain
+from src.models.uniswap import Uniswap
+from datetime import datetime
 
 
 class BatchAuction:
     """Class to represent a batch auction."""
 
+    __DEFAULT_NAME = "batch_auction"
+
     def __init__(
         self,
+        id: str,
         tokens: dict[Token, TokenInfo],
         orders: dict[str, Order],
         uniswaps: dict[str, Uniswap],
-        ref_token: Token,
-        prices: Optional[dict] = None,
-        name: str = "batch_auction",
-        metadata: Optional[dict] = None,
+        effective_gas_price: Decimal,
+        deadline: datetime,
+        name: str = __DEFAULT_NAME,
     ):
         """Initialize.
         Args:
             tokens: dict of tokens participating.
             orders: dict of Order objects.
             uniswaps: dict of Uniswap objects.
-            ref_token: Reference Token object.
-            prices: A dict of {token -> price}.
+            effective_gas_price: The current estimated gas price.
+            deadline: datetime by which a solution is required.
             name: Name of the batch auction instance.
-            metadata: Some instance metadata.
         """
         self.name = name
-        self.metadata = metadata if metadata else {}
-
+        self._id = id
         self._tokens = tokens
         self._orders = orders
         self._uniswaps = uniswaps
+        self._effective_gas_price = effective_gas_price
+        self._deadline = deadline
 
-        # Store reference token and (previous) prices.
-        self.ref_token = ref_token
-        self.prices = (
-            prices if prices else {ref_token: self._tokens[ref_token].external_price}
-        )
 
     @classmethod
-    def from_dict(cls, data: dict, name: str) -> BatchAuction:
+    def from_dict(cls, data: dict, name: str = __DEFAULT_NAME) -> BatchAuction:
         """Read a batch auction instance from a python dictionary.
 
         Args:
@@ -69,26 +64,21 @@ class BatchAuction:
             The instance.
 
         """
-        for key in ["tokens", "orders"]:
+        for key in ["tokens", "orders", "liquidity", "effective_gas_price", "deadline"]:
             if key not in data:
                 raise ValueError(f"Mandatory field '{key}' missing in instance data!")
 
         tokens = load_tokens(data["tokens"])
         orders = load_orders(data["orders"])
-
-        uniswaps = load_amms(data.get("amms", {}))
-        metadata = load_metadata(data.get("metadata", {}))
-        prices = load_prices(data.get("prices", {}))
-
-        ref_token = select_token_with_highest_normalize_priority(tokens)
+        uniswaps = load_amms(data.get("liquidity", []))
 
         return cls(
+            data['id'],
             tokens,
             orders,
             uniswaps,
-            ref_token,
-            prices=prices,
-            metadata=metadata,
+            Decimal(data['effective_gas_price']),
+            datetime.strptime(data['deadline'], '%Y-%m-%dT%H:%M:%S.%f%z'),
             name=name,
         )
 
@@ -120,40 +110,15 @@ class BatchAuction:
 
         return self._tokens[token]
 
-    @property
-    def chain(self) -> Chain:
-        """Return the blockchain on which the BatchAuction happens."""
-        if self.ref_token is None:
-            return Chain.UNKNOWN
-        ref = self.ref_token.value.lower()
-        if ref == "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2":
-            return Chain.MAINNET
-        if ref == "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d":
-            return Chain.XDAI
-        return Chain.UNKNOWN
 
-    @property
-    def default_ref_token_price(self) -> Decimal:
-        """Price of reference token if not given explicitly.
-
-        This price is chosen so that the price of one unit of
-        a token with d_t=18 decimals that costs one unit of the
-        reference token is p_t=10^18:
-
-        a_t * p_t * 10^d_t = a_r * p_r * 10^d_r
-
-        with:
-            a_t/a_r = 1
-            d_t = 18
-            p_t = 10^18
-
-        p_r = a_t/a_r * 10^18 * 10^18 / 10^d_r
-        <-> p_r = 10^(2 * 18 - d_r)
-        """
-        return Decimal(10) ** (2 * 18 - self.token_info(self.ref_token).decimals)
-
-    def solve(self) -> None:
-        """Solve Batch"""
+    def solve(self) -> Any:
+        return {
+            "id": self._id,
+            "prices": {},
+            "trades": [],
+            "interactions": [],
+            "gas": 0
+        }
 
     #################################
     #  SOLUTION PROCESSING METHODS  #
@@ -187,15 +152,6 @@ class BatchAuction:
         return self.name
 
 
-def load_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
-    """Store some basic metadata information."""
-    metadata["scaling_factors"] = {
-        Token(t): Decimal(f) for t, f in metadata.get("scaling_factors", {}).items()
-    }
-
-    return metadata
-
-
 def load_prices(
     prices_serialized: dict[TokenSerializedType, NumericType]
 ) -> dict[Token, Decimal]:
@@ -207,27 +163,19 @@ def load_prices(
     return {Token(t): Decimal(p) for t, p in prices_serialized.items()}
 
 
-def load_orders(orders_serialized: OrdersSerializedType) -> dict[str, Order]:
-    """Load dict of orders as order pool_id -> order data.
+def load_orders(orders_serialized: list[dict]) -> list[Order]:
+    """Load list of orders.
 
     Args:
-        orders_serialized: dict of order_id -> order data dict.
+        orders_serialized: list of order data.
 
     Returns:
         A list of Order objects.
     """
-    order_list = [
-        Order.from_dict(order_id, data) for order_id, data in orders_serialized.items()
-    ]
-    result: dict[str, Order] = {}
-    for order in order_list:
-        if order.order_id in result:
-            raise ValueError(f"Order pool_id <{order.order_id}> already exists!")
-        result[order.order_id] = order
-    return result
+    return [Order.from_dict(data) for data in orders_serialized]
 
 
-def load_amms(amms_serialized: UniswapsSerializedType) -> dict[str, Uniswap]:
+def load_amms(amms_serialized: list[dict]) -> dict[str, Uniswap]:
     """Load list of AMMs.
 
     NOTE: Currently, the code only supports Uniswap-style AMMs, i.e.,
@@ -240,9 +188,9 @@ def load_amms(amms_serialized: UniswapsSerializedType) -> dict[str, Uniswap]:
         A list of Uniswap objects.
 
     """
-    amm_list = []
-    for amm_id, amm_data in amms_serialized.items():
-        amm = Uniswap.from_dict(amm_id, amm_data)
+    amm_list: list[Uniswap] = []
+    for amm_dict in amms_serialized:
+        amm = Uniswap.from_dict(amm_dict['id'], amm_dict)
         if amm is not None:
             amm_list.append(amm)
 
@@ -255,6 +203,7 @@ def load_amms(amms_serialized: UniswapsSerializedType) -> dict[str, Uniswap]:
     return results
 
 
+# TODO
 def load_tokens(tokens_serialized: dict) -> TokenDict:
     """Store tokens as sorted dictionary from Token -> token info.
 

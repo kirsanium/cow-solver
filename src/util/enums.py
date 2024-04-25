@@ -7,10 +7,11 @@ class AMMKind(Enum):
     """Enum for different AMM kinds."""
 
     UNISWAP = "Uniswap"
-    CONSTANT_PRODUCT = "ConstantProduct"
-    WEIGHTED_PRODUCT = "WeightedProduct"
-    STABLE = "Stable"
-    CONCENTRATED = "Concentrated"
+    CONSTANT_PRODUCT = "constantProduct"
+    WEIGHTED_PRODUCT = "weightedProduct"
+    STABLE = "stable"
+    CONCENTRATED = "concentratedLiquidity"
+    LIMIT_ORDER = "limitOrder"
 
     def __str__(self) -> str:
         """Represent as string."""
