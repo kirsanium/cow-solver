@@ -7,7 +7,7 @@ from decimal import Decimal
 from typing import Optional, Any, Union
 
 from src.models.exchange_rate import ExchangeRate as XRate
-from src.models.token import Token, TokenBalance
+from src.models.token import Token, TokenBalance, Address
 from src.models.types import NumericType
 from src.util.enums import AMMKind
 from src.util.exec_plan_coords import ExecPlanCoords
@@ -30,10 +30,11 @@ class Uniswap:
         balance1: TokenBalance,
         balance2: TokenBalance,
         fee: FeeType,
-        cost: Optional[TokenBalance] = None,
-        mandatory: bool = False,
+        address: Address,
+        router: Address,
+        cost_estimate: Decimal,
         kind: AMMKind = AMMKind.UNISWAP,
-        weight: float = 1,
+        weight: float = 0.5,
     ):
         """Initialize.
 
@@ -62,8 +63,9 @@ class Uniswap:
         self.balance1 = balance1
         self.balance2 = balance2
         self.fee = fee if isinstance(fee, Decimal) else Decimal(fee)
-        self.cost = cost
-        self.mandatory = mandatory
+        self.cost_estimate = cost_estimate
+        self.address = address
+        self.router = router
         self.kind = kind
         self.weight = weight
 
@@ -84,61 +86,33 @@ class Uniswap:
         Returns:
             A Uniswap object.
         """
-        for attr in ["kind", "reserves", "fee"]:
+        for attr in ["kind", "address", "gas_estimate"]:
             if attr not in amm_data:
                 raise ValueError(f"Missing field '{attr}' in amm <{amm_id}>!")
 
         kind = AMMKind(amm_data["kind"])
-        reserves = amm_data.get("reserves")
+        tokens = amm_data.get("tokens")
         weight = 0.5
 
         if kind == AMMKind.CONSTANT_PRODUCT:
             # Parse UniswapV2/Sushiswap pools.
-            if not isinstance(reserves, dict):
+            if not isinstance(tokens, dict):
                 raise ValueError(
-                    f"AMM <{amm_id}>: 'reserves' must be a dict of Token -> amount!"
+                    f"AMM <{amm_id}>: 'tokens' must be a dict of Token -> amount!"
                 )
-            if len(reserves) != 2:
+            if len(tokens) != 2:
                 message = (
                     f"AMM <{amm_id}>: "
                     f"ConstantProduct AMMs are only supported with 2 tokens!"
                 )
                 logging.warning(message)
                 return None
+            for attr in ["tokens", "fee", "router"]:
+                if attr not in amm_data:
+                    raise ValueError(f"Missing field '{attr}' in amm <{amm_id}>!")
             balance1, balance2 = [
-                TokenBalance(Decimal(b), Token(t)) for t, b in reserves.items()
+                TokenBalance(Decimal(info['balance']), Token(t)) for t, info in tokens.items()
             ]
-
-        elif kind == AMMKind.WEIGHTED_PRODUCT:
-            # Parse Balancer weighted constant-product pools.
-            if not (
-                isinstance(reserves, dict)
-                and all(
-                    isinstance(reserve_info, dict) and key in reserve_info
-                    for reserve_info in reserves.values()
-                    for key in ["balance", "weight"]
-                )
-            ):
-                raise ValueError(
-                    f"AMM <{amm_id}>: 'reserves' must be a dict "
-                    f"of Token -> {'balance': .., 'weight': ..}"
-                )
-            if (
-                len(reserves) != 2
-                or len(set(b["weight"] for b in reserves.values())) > 1
-            ):
-                logging.warning(
-                    f"AMM <{amm_id}>: WeightedProduct AMMs are only supported "
-                    "with 2 tokens and equal weights!"
-                )
-                return None
-
-            weight = list(reserves.values())[0]["weight"]
-            balance1, balance2 = [
-                TokenBalance(Decimal(b["balance"]), Token(t))
-                for t, b in reserves.items()
-            ]
-
         else:
             logging.warning(
                 f"AMM <{amm_id}>: type <{kind}> is currently not supported!"
@@ -152,14 +126,16 @@ class Uniswap:
             pool_id=amm_id,
             balance1=balance1,
             balance2=balance2,
-            fee=Decimal(amm_data["fee"]),
-            cost=TokenBalance.parse(amm_data.get("cost"), allow_none=True),
-            kind=kind,
-            weight=weight,
+            fee=Decimal(amm_data['fee']),
+            address=Address(amm_data['address']),
+            router=Address(amm_data['router']),
+            cost_estimate=Decimal(amm_data['gas_estimate']),
+            weight=weight
         )
 
     def as_dict(self) -> dict:
-        """Return AMM object as dictionary.
+        """
+        Return AMM object as dictionary.
 
         NOTE: Currently, the code only supports Uniswap-style AMMs, i.e.,
         constant-product pools with two tokens and equal weights.
@@ -169,22 +145,11 @@ class Uniswap:
         token2 = str(self.token2)
         balance1 = decimal_to_str(self.balance1.as_decimal())
         balance2 = decimal_to_str(self.balance2.as_decimal())
-
-        reserves: Union[str, dict]
-        if self.kind == AMMKind.WEIGHTED_PRODUCT:
-            reserves = {
-                token1: {"balance": balance1, "weight": self.weight},
-                token2: {"balance": balance2, "weight": self.weight},
-            }
-        else:
-            reserves = {token1: balance1, token2: balance2}
-
-        cost = None
-        if self.cost is not None:
-            cost = {
-                "token": str(self.cost.token),
-                "amount": decimal_to_str(self.cost.as_decimal()),
-            }
+        
+        tokens = {
+            token1: {'balance': balance1},
+            token2: {'balance': balance2},
+        }
 
         execution = {}
         if self.is_executed():
@@ -228,9 +193,11 @@ class Uniswap:
 
         return {
             "kind": str(self.kind),
-            "reserves": reserves,
-            "cost": cost,
+            "address": str(self.address),
+            "gas_estimate": decimal_to_str(self.cost_estimate),
+            "tokens": tokens,
             "fee": decimal_to_str(self.fee),
+            "router": str(self.router),
             "execution": execution,
         }
 

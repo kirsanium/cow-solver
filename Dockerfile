@@ -1,6 +1,6 @@
-FROM python:3.10
+FROM python:3.10-alpine
 
-RUN apt-get update && apt-get install gcc libc-dev -y
+RUN apk add --update gcc libc-dev linux-headers
 
 WORKDIR /app
 
@@ -10,6 +10,6 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # Copy full source (see .dockerignore)
-COPY src/ ./src/
+COPY . .
 
 CMD [ "python3", "-m" , "src._server"]

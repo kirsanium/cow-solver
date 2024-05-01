@@ -1,6 +1,7 @@
 .github
 tests
-data
+.venv
+**/__pycache__
 .env.sample
 .gitignore
 .pylintrc

@@ -5,17 +5,13 @@ import json
 import logging
 from decimal import Decimal
 from enum import Enum
-from typing import Optional, Any, Union
-
-
+from typing import Optional, Union
+from dataclasses import dataclass, field
 from src.models.exchange_rate import ExchangeRate as XRate
 from src.models.token import Token, TokenBalance
 from src.models.types import NumericType
 from src.util.constants import Constants
 from src.util.numbers import decimal_to_str
-
-OrderSerializedType = dict[str, Any]
-OrdersSerializedType = dict[str, OrderSerializedType]
 
 
 class OrderMatchType(Enum):
@@ -26,7 +22,122 @@ class OrderMatchType(Enum):
     BOTH_FILLED = "BothFilled"
 
 
-# TODO - use dataclass for this.
+class OrderKind(str, Enum):
+    """Order kind."""
+    SELL = 'sell'
+    BUY = 'buy'
+
+
+class OrderClass(str, Enum):
+    """Order class."""
+    market = 'market'
+    limit = 'limit'
+    liquidity = 'liquidity'
+
+
+@dataclass
+class Quote:
+    sell_amount: Decimal
+    buy_amount: Decimal
+
+    @classmethod
+    def from_dict(cls, data: dict) -> Quote:
+        required_attributes = [
+            "sell_amount",
+            "buy_amount",
+        ]
+
+        for attr in required_attributes:
+            if attr not in data:
+                raise ValueError(f"Missing field '{attr}' in order!")
+        
+        return Quote(data['sell_amount'], data['buy_amount'])
+
+    def to_dict(self) -> dict:
+        return {
+            'sell_amount': decimal_to_str(self.sell_amount),
+            'buy_amount': decimal_to_str(self.buy_amount),
+        }
+
+
+
+class FeePolicyKind(str, Enum):
+    """ Fee policy kind """
+
+    surplus = 'surplus'
+    priceImprovement = 'priceImprovement'
+    volume = 'volume'
+
+
+@dataclass
+class FeePolicyBase:
+    """ A fee policy that applies to an order. """
+
+    kind: FeePolicyKind
+    factor: Decimal
+
+    def to_dict(self) -> dict:
+        return {
+            'kind': str(self.kind),
+            'factor': decimal_to_str(self.factor)
+        }
+    
+    @classmethod
+    def from_dict(cls, data: dict) -> FeePolicyBase:
+        kind = data['kind']
+        quote = data.get('quote')
+        match kind:
+            case FeePolicyKind.surplus:
+                return SurplusFee(
+                    FeePolicyKind[kind],
+                    Decimal(data['factor']),
+                    Decimal(data['max_volume_factor'])
+                )
+            case PriceImprovement.priceImprovement:
+                return SurplusFee(
+                    FeePolicyKind[kind],
+                    Decimal(data['factor']),
+                    Decimal(data['max_volume_factor']),
+                    None if not quote else Quote.from_dict(quote)
+                )
+            case FeePolicyKind.volume:
+                return VolumeFee(
+                    FeePolicyKind[kind],
+                    Decimal(data['factor']),
+                )
+
+@dataclass
+class VolumeFee(FeePolicyBase):
+    ...
+
+
+@dataclass
+class SurplusFee(FeePolicyBase):
+    max_volume_factor: Decimal
+
+    def to_dict(self) -> dict:
+        res = super().to_dict()
+        res['max_volume_factor'] = decimal_to_str(self.max_volume_factor)
+        return res
+
+
+@dataclass
+class PriceImprovement(FeePolicyBase):
+    max_volume_factor: Decimal
+    quote: Optional[Quote]
+
+    def to_dict(self) -> dict:
+        res = super().to_dict()
+        res['max_volume_factor'] = decimal_to_str(self.max_volume_factor)
+        if self.quote:
+            res['quote'] = self.quote.to_dict()
+        return res
+
+
+FeePolicy = Union[VolumeFee, SurplusFee, PriceImprovement]
+
+
+@dataclass
 class Order:
     """Representation of a limit order.
     An order is specified with 3 bounds:
@@ -38,66 +149,31 @@ class Order:
     the order represents a classical limit {buy|sell} order,
     a cost-bounded {buy|sell} order or a {buy|sell} market order.
     """
+    order_id: str
+    buy_token: Token
+    sell_token: Token
+    buy_amount: Decimal
+    sell_amount: Decimal
+    kind: OrderKind
+    partially_fillable: bool
+    class_: OrderClass
+    fee_policies: list[FeePolicy] = field(default_factory=list)
+        
 
-    def __init__(
-        self,
-        order_id: str,
-        buy_token: Token,
-        sell_token: Token,
-        buy_amount: Decimal,
-        sell_amount: Decimal,
-        is_sell_order: bool,
-        allow_partial_fill: bool = False,
-        is_liquidity_order: bool = False,
-        has_atomic_execution: bool = False,
-        fee: Optional[TokenBalance] = None,
-        cost: Optional[TokenBalance] = None,
-    ) -> None:
-        """Initialize.
-
-        Args:
-            order_id: Order pool_id.
-            buy_token: Token to be bought.
-            sell_token: Token to be sold.
-
-        Kwargs:
-            max_buy_amount: Maximum amount of buy-token to be bought, or None.
-            max_sell_amount: Maximum amount of sell-token to be sold, or None.
-            max_limit: Limit exchange rate for order.
-            allow_partial_fill: Can order be partially matched, or not.
-            is_liquidity_order: Is the order from a market maker, or not.
-            has_atomic_execution: Needs to executed atomically, or not.
-            fee: Fee contribution of the order to the objective.
-            cost: Cost of including the order in the solution.
-            exec_buy_amount: Matched amount of buy-token in solution.
-            exec_sell_amount: Matched amount of sell-token in solution.
-        """
-        if buy_token == sell_token:
-            raise ValueError("sell- and buy-token cannot be equal!")
-
-        if not (buy_amount > 0 and sell_amount > 0):
-            raise ValueError(
-                f"buy {buy_amount} and sell {sell_amount} amounts must be positive!"
-            )
-
-        self.order_id = order_id
-        self.buy_token = buy_token
-        self.sell_token = sell_token
-        self.buy_amount = buy_amount
-        self.sell_amount = sell_amount
-        self.is_sell_order = is_sell_order
-        self.allow_partial_fill = allow_partial_fill
-        self.is_liquidity_order = is_liquidity_order
-        self.has_atomic_execution = has_atomic_execution
-        self.fee: Optional[TokenBalance] = fee
-        self.cost: Optional[TokenBalance] = cost
-
-        # Stuff that isn't part of the constructor parameters.
+    def __post_init__(self):
         self.exec_buy_amount: Optional[TokenBalance] = None
         self.exec_sell_amount: Optional[TokenBalance] = None
 
+        if self.buy_token == self.sell_token:
+            raise ValueError("sell- and buy-token cannot be equal!")
+
+        if not (self.buy_amount > 0 and self.sell_amount > 0):
+            raise ValueError(
+                f"buy {self.buy_amount} and sell {self.sell_amount} amounts must be positive!"
+            )
+
     @classmethod
-    def from_dict(cls, order_id: str, data: OrderSerializedType) -> Order:
+    def from_dict(cls, data: dict) -> Order:
         """
         Read Order object from order data dict.
         Args:
@@ -106,63 +182,48 @@ class Order:
         """
 
         required_attributes = [
+            "uid",
             "sell_token",
             "buy_token",
             "sell_amount",
             "buy_amount",
-            "is_sell_order",
-            "allow_partial_fill",
-            "is_liquidity_order",
+            "kind",
+            "partially_fillable",
+            "class_",
         ]
 
         for attr in required_attributes:
             if attr not in data:
-                raise ValueError(f"Missing field '{attr}' in order <{order_id}>!")
+                raise ValueError(f"Missing field '{attr}' in order!")
 
         return Order(
-            order_id=order_id,
+            order_id=data["uid"],
             buy_token=Token(data["buy_token"]),
             sell_token=Token(data["sell_token"]),
             buy_amount=Decimal(data["buy_amount"]),
             sell_amount=Decimal(data["sell_amount"]),
-            is_sell_order=bool(data["is_sell_order"]),
-            allow_partial_fill=bool(data["allow_partial_fill"]),
-            is_liquidity_order=bool(data["is_liquidity_order"]),
-            fee=TokenBalance.parse(data.get("fee"), allow_none=True),
-            cost=TokenBalance.parse(data.get("cost"), allow_none=True),
+            kind=OrderKind(data['kind']),
+            partially_fillable=bool(data['partially_fillable']),
+            class_=OrderClass(data['class_']),
+            fee_policies=[
+                FeePolicyBase.from_dict(obj) for obj in data['fee_policies']
+            ] if 'fee_policies' in data else []
         )
 
-    def as_dict(self) -> OrderSerializedType:
+    def as_dict(self) -> dict:
         """Return Order object as dictionary."""
         # Currently, only limit buy or sell orders be handled.
-        order_dict = {
+        return {
+            "order_id": str(self.order_id),
             "sell_token": str(self.sell_token),
             "buy_token": str(self.buy_token),
             "sell_amount": decimal_to_str(self.sell_amount),
             "buy_amount": decimal_to_str(self.buy_amount),
-            "allow_partial_fill": self.allow_partial_fill,
-            "is_sell_order": self.is_sell_order,
-            "exec_sell_amount": decimal_to_str(self.exec_sell_amount.as_decimal())
-            if self.exec_sell_amount is not None
-            else "0",
-            "exec_buy_amount": decimal_to_str(self.exec_buy_amount.as_decimal())
-            if self.exec_buy_amount is not None
-            else "0",
+            "kind": str(self.kind),
+            "partially_fillable": self.partially_fillable,
+            "class_": str(self.class_),
+            "fee_policies": [fp.to_dict() for fp in self.fee_policies]
         }
-
-        if self.fee is not None:
-            order_dict["fee"] = {
-                "token": str(self.fee.token),
-                "amount": decimal_to_str(self.fee.as_decimal()),
-            }
-
-        if self.cost is not None:
-            order_dict["cost"] = {
-                "token": str(self.cost.token),
-                "amount": decimal_to_str(self.cost.as_decimal()),
-            }
-
-        return order_dict
 
     @property
     def max_limit(self) -> XRate:
@@ -175,14 +236,14 @@ class Order:
     @property
     def max_buy_amount(self) -> Optional[TokenBalance]:
         """None for sell-orders"""
-        if not self.is_sell_order:
+        if self.kind == OrderKind.BUY:
             return TokenBalance.parse_amount(self.buy_amount, self.buy_token)
         return None
 
     @property
     def max_sell_amount(self) -> Optional[TokenBalance]:
         """None for buy-orders"""
-        if self.is_sell_order:
+        if self.kind == OrderKind.SELL:
             return TokenBalance.parse_amount(self.sell_amount, self.sell_token)
         return None
 
